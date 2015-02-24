@@ -1,2 +1,0 @@
-# CGP
-Cube Gest Proj
