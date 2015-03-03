@@ -1,0 +1,271 @@
+TCPClient client;
+
+char server[] = "cgp.besaba.com";
+
+int led = D0;
+int X_pin = A1;
+int Y_pin  = A2;
+int Z_pin = A3;
+int x,y,z;
+int test = 0;
+int controlLoop = 0;
+int curr_face, prec_face=0;
+
+unsigned long lastConnectionTime = 0;          // last time you connected to the server, in milliseconds
+boolean lastConnected = false;                 // state of the connection last time through the main loop
+const unsigned int postingInterval = 10*1000;  // delay between updates, in milliseconds
+
+
+
+
+
+
+void setup() 
+{
+  pinMode(X_pin, INPUT);
+  pinMode(Y_pin, INPUT);
+  pinMode(Z_pin, INPUT);
+  pinMode(D0, OUTPUT);
+  pinMode(D1, OUTPUT);
+  pinMode(D2, OUTPUT);
+  pinMode(D3, OUTPUT);
+  pinMode(D4, OUTPUT);
+  pinMode(D5, OUTPUT);
+  
+  //RGB.control(true);
+}
+
+int debut,fin;
+
+void loop() 
+{
+    x = analogRead(X_pin);
+    y = analogRead(Y_pin);
+    z = analogRead(Z_pin);
+    
+    whichFace();
+
+  // if there's incoming data from the net connection. send it out the serial port.  This is for debugging purposes only:
+  if (client.available()) {
+    char c = client.read();
+    Serial.print(c);
+  }
+
+  // if there's no net connection, but there was one last time through the loop, then stop the client:
+  if (!client.connected() && lastConnected) {
+    Serial.println();
+    Serial.println("disconnecting.");
+    client.stop();
+  }
+
+  // if you're not connected, and ten seconds have passed since your last connection, then connect again and send data:
+  if(!client.connected() && (millis() - lastConnectionTime > postingInterval)) {
+    //onLED();
+      httpRequest();
+    //offLED();
+    
+      
+   // RGB.color(0, 255, 0);
+      
+    /*if(controlLoop == 0)
+    {
+        controlLoop = 1;
+        httpRequest();
+    }
+    else
+    {
+        Serial.println("Boucle.");
+    }*/
+  }
+  // store the state of the connection for next time through
+  // the loop:
+  lastConnected = client.connected();
+
+}
+
+// this method makes a HTTP connection to the server:
+void httpRequest() {
+  // if there's a successful connection:
+  if (client.connect(server, 80)) {
+    if (curr_face != prec_face)
+    {
+        prec_face = curr_face;
+        Serial.println("connecting...");
+     // send the HTTP PUT request:
+   // client.println("GET /ecrire.php?face=4&cube=9&x=" + X_strvalue + "&y=" + Y_strvalue + "&z=" + Z_strvalue + " HTTP/1.1");
+        client.println("GET /ecrire.php?x=" + String(x) + "&y=" + String(y) + "&z=" + String(z) + "&face=" + String(curr_face) + " HTTP/1.1");
+    // client.println("GET /mail.php?face=" + String(curr_face) + " HTTP/1.1");
+    //client.print("50");
+         client.println("Host: cgp.besaba.com");
+         client.println("Content-Length: 0");
+    //client.println("User-Agent: arduino-ethernet");
+         client.println("Connection: close");
+    
+    
+         client.println();
+
+    // note the time that the connection was made:
+         lastConnectionTime = millis();
+    }
+   // RGB.color(0, 0, 255);
+  } 
+  else {
+    // if you couldn't make a connection:
+    Serial.println("connection failed");
+    Serial.println("disconnecting.");
+    client.stop();
+  }
+}
+
+
+void offLED(){
+        digitalWrite(D0, LOW);   // Turn ON the LED pins
+        digitalWrite(D1, LOW); 
+        digitalWrite(D2, LOW); 
+        digitalWrite(D3, LOW); 
+        digitalWrite(D4, LOW); 
+        digitalWrite(D5, LOW); 
+}
+
+void onLED(){
+        digitalWrite(D0, HIGH);   // Turn ON the LED pins
+        digitalWrite(D1, HIGH); 
+        digitalWrite(D2, HIGH); 
+        digitalWrite(D3, HIGH); 
+        digitalWrite(D4, HIGH); 
+        digitalWrite(D5, HIGH); 
+}
+
+
+
+void whichFace() {
+
+    float coefm = 0.9;
+    float coefp = 1.1;
+    
+    /*
+    float x_val_f1 = 1549, y_val_f1 = 2061, z_val_f1 = 1455;
+    float x_val_f2 = 1558, y_val_f2 = 2070, z_val_f2 = 1717;
+    float x_val_f3 = 1840, y_val_f3 = 2076, z_val_f3 = 1736;
+    float x_val_f4 = 1259, y_val_f4 = 2091, z_val_f4 = 1719;
+    float x_val_f5 = 1552, y_val_f5 = 2062, z_val_f5 = 1700;
+    float x_val_f6 = 1569, y_val_f6 = 1544, z_val_f6 = 1979;
+    */
+    
+    float x_val_f1 = 1548, y_val_f1 = 1537, z_val_f1 = 1978;
+    float x_val_f2 = 1558, y_val_f2 = 1238, z_val_f2 = 1686;
+    float x_val_f3 = 1254, y_val_f3 = 1551, z_val_f3 = 1692;
+    float x_val_f4 = 1841, y_val_f4 = 1584, z_val_f4 = 1712;
+    float x_val_f5 = 1542, y_val_f5 = 1835, z_val_f5 = 1733;
+    float x_val_f6 = 1538, y_val_f6 = 1521, z_val_f6 = 1450;
+
+    offLED();
+    
+   /* if( ( x>1400 && x<1700 ) && ( y>1400 && y<1700 ) && ( z>1350 && z<1700 ) )
+    {
+        curr_face = 10;
+         digitalWrite(D0, HIGH);
+    }
+    
+    else if( ( x>1400 && x<1700 ) && ( y>1400 && y<1700 ) && ( z>1350 && z<1700 ) )
+    {
+        curr_face = 10;
+         digitalWrite(D0, HIGH);
+    }*/
+    
+    if ((x < x_val_f1+100 && x > x_val_f1-100) && (y < y_val_f1+100 && y > y_val_f1-100) && (z < z_val_f1+100 && z > z_val_f1-100)) { 
+        curr_face = 1;
+        digitalWrite(D0, HIGH);   // Turn ON the LED pins
+    }
+    else if ((x < x_val_f2+100 && x > x_val_f2-100) && (y < y_val_f2+100 && y > y_val_f2-100) && (z < z_val_f2+100 && z > z_val_f2-100)) { 
+        curr_face = 2;
+        digitalWrite(D1, HIGH);   // Turn ON the LED pins
+    }
+    else if ((x < x_val_f3+100 && x > x_val_f3-100) && (y < y_val_f3+100 && y > y_val_f3-100) && (z < z_val_f3+100 && z > z_val_f3-100)) { 
+        curr_face = 3;
+        digitalWrite(D2, HIGH);   // Turn ON the LED pins
+    }
+    else if ((x < x_val_f4+100 && x > x_val_f4-100) && (y < y_val_f4+100 && y > y_val_f4-100) && (z < z_val_f4+100 && z > z_val_f4-100)) { 
+        curr_face = 4;
+        digitalWrite(D3, HIGH);   // Turn ON the LED pins
+    }
+    else if ((x < x_val_f5+100 && x > x_val_f5-100) && (y < y_val_f5+100 && y > y_val_f5-100) && (z < z_val_f5+100 && z > z_val_f5-100)) { 
+        curr_face = 5;
+        digitalWrite(D4, HIGH);   // Turn ON the LED pins
+    }
+    else if ((x < x_val_f6+100 && x > x_val_f6-100) && (y < y_val_f6+100 && y > y_val_f6-100) && (z < z_val_f6+100 && z > z_val_f6-100)) { 
+        curr_face = 6;
+        digitalWrite(D5, HIGH);   // Turn ON the LED pins
+    }
+    else {
+        curr_face = 0;
+    }
+    
+   /*if ((x < x_val_f1*coefp && x > x_val_f1*coefm) && (y < y_val_f1*coefp && y > y_val_f1*coefm) && (z < z_val_f1*coefp && z > z_val_f1*coefm)) { 
+        curr_face = 1;
+        digitalWrite(D0, HIGH);   // Turn ON the LED pins
+    }
+    else if ((x < x_val_f2*coefp && x > x_val_f2*coefm) && (y < y_val_f2*coefp && y > y_val_f2*coefm) && (z < z_val_f2*coefp && z > z_val_f2*coefm)) { 
+        curr_face = 2;
+        digitalWrite(D1, HIGH);   // Turn ON the LED pins
+    }
+    else if ((x < x_val_f3*coefp && x > x_val_f3*coefm) && (y < y_val_f3*coefp && y > y_val_f3*coefm) && (z < z_val_f3*coefp && z > z_val_f3*coefm)) { 
+        curr_face = 3;
+        digitalWrite(D2, HIGH);   // Turn ON the LED pins
+    }
+    else if ((x < x_val_f4*coefp && x > x_val_f4*coefm) && (y < y_val_f4*coefp && y > y_val_f4*coefm) && (z < z_val_f4*coefp && z > z_val_f4*coefm)) { 
+        curr_face = 4;
+        digitalWrite(D3, HIGH);   // Turn ON the LED pins
+    }
+    else if ((x < x_val_f5*coefp && x > x_val_f5*coefm) && (y < y_val_f5*coefp && y > y_val_f5*coefm) && (z < z_val_f5*coefp && z > z_val_f5*coefm)) { 
+        curr_face = 5;
+        digitalWrite(D4, HIGH);   // Turn ON the LED pins
+    }
+    else if ((x < x_val_f6*coefp && x > x_val_f6*coefm) && (y < y_val_f6*coefp && y > y_val_f6*coefm) && (z < z_val_f6*coefp && z > z_val_f6*coefm)) { 
+        curr_face = 6;
+        digitalWrite(D5, HIGH);   // Turn ON the LED pins
+    }
+    else {
+        curr_face = 0;
+    }*/
+
+    /*else if ((x < x_val_f1*coefp && x > x_val_f1*coefp) && (y < y_val_f1*coefp && y > y_val_f1*coefp) && (z < z_val_f1*coefp && z > z_val_f1*coefp)) { 
+          curr_face = 1;
+          digitalWrite(D0, HIGH);   // Turn ON the LED pins
+    }
+   else if (x > (x_val_f1-(x_val_f1*coef)) && x < (x_val_f1+(x_val_f1*coef)) &&  y > (y_val_f1-(y_val_f1*coef)) && y < (y_val_f1+(y_val_f1*coef)) && z > (z_val_f1-(z_val_f1*coef)) && z < (z_val_f1+(z_val_f1*coef))) // X:390-400 Y:343 Z:390-400  x = 2033 y = 2015 z = 1787 
+      { 
+          curr_face = 1;
+          digitalWrite(D0, HIGH);   // Turn ON the LED pins
+      }
+     else   if (x > (x_val_f2-(x_val_f2*coef)) && x < (x_val_f2+(x_val_f2*coef)) &&  y > (y_val_f2-(y_val_f2*coef)) && y < (y_val_f2+(y_val_f2*coef)) && z > (z_val_f2-(z_val_f2*coef)) && z < (z_val_f2+(z_val_f2*coef))) // X:270-300 Y:320-340 Z:273-300  x = 2087 y = 2060 z = 2371 
+      { 
+          curr_face = 2;
+          digitalWrite(D1, HIGH);   // Turn ON the LED pins
+      }
+     else   if (x > (x_val_f3-(x_val_f3*coef)) && x < (x_val_f3+(x_val_f3*coef)) &&  y > (y_val_f3-(y_val_f3*coef)) && y < (y_val_f3+(y_val_f3*coef)) && z > (z_val_f3-(z_val_f3*coef)) && z < (z_val_f3+(z_val_f3*coef))) // X:320-340 Y:400 Z:320-340  x = 2059 y = 2051 z = 2046
+      { 
+          curr_face = 3;
+          digitalWrite(D2, HIGH);   // Turn ON the LED pins
+      }
+      else   if (x > (x_val_f4-(x_val_f4*coef)) && x < (x_val_f4+(x_val_f4*coef)) &&  y > (y_val_f4-(y_val_f4*coef)) && y < (y_val_f4+(y_val_f4*coef)) && z > (z_val_f4-(z_val_f4*coef)) && z < (z_val_f4+(z_val_f4*coef))) // X:320-340 Y:320-340 Z:320-340  x = 2092 y = 2456 z = 2046 
+      { 
+          curr_face = 4;
+          digitalWrite(D3, HIGH);   // Turn ON the LED pins
+      }
+     else  if (x > (x_val_f5-(x_val_f5*coef)) && x < (x_val_f5+(x_val_f5*coef)) &&  y > (y_val_f5-(y_val_f5*coef)) && y < (y_val_f5+(y_val_f5*coef)) && z > (z_val_f5-(z_val_f5*coef)) && z < (z_val_f5+(z_val_f5*coef))) // X:320-340 Y:270-290 Z:320-340  x = 2444 y = 2048 z = 2048 
+      { 
+          curr_face = 5;
+          digitalWrite(D4, HIGH);   // Turn ON the LED pins
+      }
+     else  if (x > (x_val_f6-(x_val_f6*coef)) && x < (x_val_f6+(x_val_f6*coef)) &&  y > (y_val_f6-(y_val_f6*coef)) && y < (y_val_f6+(y_val_f6*coef)) && z > (z_val_f6-(z_val_f6*coef)) && z < (z_val_f6+(z_val_f6*coef))) // X:270-300 Y:320-340 Z:320-340  x = 2032 y = 1641 z = 2046 
+      { 
+          curr_face = 6;
+          digitalWrite(D5, HIGH);   // Turn ON the LED pins
+      }
+     else {
+        curr_face = 0;
+        //digitalWrite(D0, HIGH);  
+        //digitalWrite(D1, HIGH);}
+     }*/
+}
